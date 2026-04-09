@@ -3,69 +3,84 @@ import Webcam from 'react-webcam';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   SpeakerWaveIcon, 
-  ExclamationTriangleIcon, 
   HeartIcon,
   StopIcon,
   PlayIcon,
-  FaceSmileIcon,
-  FaceFrownIcon,
-  ChartBarIcon
+  SparklesIcon
 } from '@heroicons/react/24/solid';
-import { Button, CircularProgress } from '@mui/material';
+import { Button } from '@mui/material';
 
 export default function EmotionTherapy() {
   const [isActive, setIsActive] = useState(false);
   const [timer, setTimer] = useState(0);
-  const [emotionState, setEmotionState] = useState('Neutral'); // Neutral, Stressed, Joyful
-  const [cognitiveLoad, setCognitiveLoad] = useState('Low'); // Low, High
-  const [aiMessage, setAiMessage] = useState("Ready to start Emotion Tracking.");
+  const [emotionState, setEmotionState] = useState('Neutral'); // Neutral, Calm, Stressed, Focus
+  const [cognitiveLoad, setCognitiveLoad] = useState(30); 
+  const [heartRate, setHeartRate] = useState(72);
+  const [aiMessage, setAiMessage] = useState("System Standby. Awaiting session initialization.");
+  const [facialData, setFacialData] = useState({ tension: 0, symmetry: 0.98 });
+  
   const timerRef = useRef(null);
 
-  // Mocking AI Emotion Therapy Process
+  // Simulated AI Logic for Emotion Changes
   useEffect(() => {
     if (isActive) {
       timerRef.current = setInterval(() => {
         setTimer((prev) => prev + 1);
+        
+        // Randomly simulate slight biometric fluctuations
+        setHeartRate(prev => Math.max(60, Math.min(100, prev + (Math.random() - 0.5) * 4)));
+        setCognitiveLoad(prev => Math.max(10, Math.min(90, prev + (Math.random() - 0.5) * 5)));
+        setFacialData(prev => ({ 
+           tension: Math.max(0, Math.min(1, prev.tension + (Math.random() - 0.5) * 0.1)),
+           symmetry: 0.95 + Math.random() * 0.05
+        }));
       }, 1000);
 
-      // Simulated Events
-      const event1 = setTimeout(() => {
-        setEmotionState('Calm');
-        setCognitiveLoad('Low');
-        setAiMessage("Your facial tension is low. Let's begin some mild cognitive tasks.");
-      }, 3000);
+      // Programmed Event Timeline for Demo
+      const timeline = [
+        { time: 5, state: 'Calm', msg: "Facial tension decreasing. Neural activity stabilizing. Excellent start." },
+        { time: 15, state: 'Stressed', msg: "Elevated micro-expression tension detected. Cognitive load rising. please pause and focus on your breath." },
+        { time: 25, state: 'Focus', msg: "Recovery complete. Your alpha-wave state is optimal. Let's proceed with the cognitive assessment." },
+        { time: 40, state: 'Calm', msg: "Session performance is above baseline. Emotional resonance is positive." }
+      ];
 
-      const event2 = setTimeout(() => {
-        setEmotionState('Stressed');
-        setCognitiveLoad('High');
-        setAiMessage("I'm detecting elevated stress and high cognitive load. Let's pause and take deep breaths.");
-      }, 9000);
-
-      const event3 = setTimeout(() => {
-        setEmotionState('Joyful');
-        setCognitiveLoad('Low');
-        setAiMessage("Great recovery! Your emotional state is back to optimal. You're doing excellent.");
-      }, 16000);
+      const timeouts = timeline.map(event => {
+        return setTimeout(() => {
+           if (isActive) {
+              setEmotionState(event.state);
+              setAiMessage(event.msg);
+              speak(event.msg);
+           }
+        }, event.time * 1000);
+      });
 
       return () => {
         clearInterval(timerRef.current);
-        clearTimeout(event1);
-        clearTimeout(event2);
-        clearTimeout(event3);
+        timeouts.forEach(t => clearTimeout(t));
       };
     } else {
       clearInterval(timerRef.current);
       setEmotionState('Neutral');
-      setCognitiveLoad('Low');
+      setAiMessage("Session complete. Sensors deactivated.");
     }
   }, [isActive]);
 
+  const speak = (text) => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 0.9;
+      utterance.pitch = 1.1;
+      window.speechSynthesis.speak(utterance);
+    }
+  };
+
   const toggleSession = () => {
-    setIsActive(!isActive);
-    if (isActive) {
-      setAiMessage("Session paused. Emotion sensors deactivated.");
-    } else {
-      setAiMessage("Initializing Facial Emotion Recogition and Vitals...");
+    const newState = !isActive;
+    setIsActive(newState);
+    if (newState) {
+       setAiMessage("Initializing Neuro-Sync AI. Facial mapping active...");
+       speak("Initializing Neuro-Sync AI. Facial mapping active.");
     }
   };
 
@@ -75,181 +90,187 @@ export default function EmotionTherapy() {
     return `${m}:${s}`;
   };
 
-  const getEmotionColor = () => {
+  const getThemeColor = () => {
     switch (emotionState) {
       case 'Calm': return '#00e5ff';
       case 'Stressed': return '#ff1744';
-      case 'Joyful': return '#00e676';
-      default: return '#9e9e9e';
+      case 'Focus': return '#b000ff';
+      case 'Neutral': return '#9e9e9e';
+      default: return '#00e5ff';
     }
   };
 
   return (
-    <div className="min-h-[calc(100vh-73px)] p-4 md:p-8 flex flex-col items-center bg-[#050505]">
+    <div className="min-h-[calc(100vh-73px)] p-4 md:p-8 flex flex-col items-center bg-[#050505] text-white">
       
-      {/* Header Section */}
-      <div className="w-full max-w-6xl mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      {/* Header */}
+      <div className="w-full max-w-6xl mb-8 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
-          <h1 className="text-3xl font-black font-inter text-transparent bg-clip-text bg-gradient-to-r from-[#ff1744] to-[#b000ff]">Emotion Therapy</h1>
-          <p className="text-gray-400 font-inter text-sm">Real-time Emotion, Stress & Cognitive Load Tracking</p>
+          <h1 className="text-4xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-[#00e5ff] to-[#b000ff] uppercase">Emotion Sync v2.0</h1>
+          <p className="text-gray-500 font-mono text-xs tracking-widest mt-1 italic">AUTONOMOUS NEURO-THERAPY MODULE</p>
+        </div>
+        <div className="flex gap-4">
+             <div className="bg-white/5 border border-white/10 px-6 py-2 rounded-2xl flex flex-col items-center">
+                <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Elapsed</span>
+                <span className="text-xl font-mono font-black">{formatTime(timer)}</span>
+             </div>
         </div>
       </div>
 
       <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* Main Camera Layer */}
-        <div className="lg:col-span-2 relative rounded-3xl overflow-hidden border-2 border-white/10 bg-black shadow-2xl flex items-center justify-center min-h-[450px]">
+        {/* Main Interface: Camera + Live Overlays */}
+        <div className="lg:col-span-2 relative rounded-[40px] overflow-hidden border border-white/20 bg-black shadow-2xl min-h-[500px]">
           <Webcam 
             audio={false}
-            className="w-full h-full object-cover opacity-70"
+            className="w-full h-full object-cover opacity-60 grayscale hover:grayscale-0 transition-all duration-1000"
             mirrored={true}
           />
           
-          {/* Overlay UI */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none"></div>
-          
-          {/* Tag */}
-          <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-md px-4 py-2 rounded-full border border-white/20 flex items-center gap-2">
-            <span className="relative flex h-3 w-3">
-              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isActive ? 'bg-[#ff1744]' : 'bg-gray-500'}`}></span>
-              <span className={`relative inline-flex rounded-full h-3 w-3 ${isActive ? 'bg-[#ff1744]' : 'bg-gray-500'}`}></span>
-            </span>
-            <span className="text-white font-inter text-sm tracking-widest font-bold">EMO-SENSOR</span>
-          </div>
-
-          <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md px-4 py-2 rounded-full border border-white/20 flex items-center gap-2">
-            <span className="text-white font-inter text-lg font-mono">{formatTime(timer)}</span>
-          </div>
-
-          {/* Dynamic Tracker Overlay */}
+          {/* Scanning Effect */}
           {isActive && (
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="absolute pointer-events-none border-2 border-dashed rounded-lg w-56 h-56 flex items-center justify-center p-2"
-              style={{ borderColor: getEmotionColor() }}
-              transition={{ repeat: Infinity, duration: 2, repeatType: 'reverse' }}
-            >
-               <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2" style={{ borderColor: getEmotionColor() }}></div>
-               <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2" style={{ borderColor: getEmotionColor() }}></div>
-               <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2" style={{ borderColor: getEmotionColor() }}></div>
-               <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2" style={{ borderColor: getEmotionColor() }}></div>
-               <span className="text-xs font-mono font-bold tracking-widest bg-black/70 px-2 py-1 rounded" style={{ color: getEmotionColor() }}>
-                 {emotionState.toUpperCase()}
-               </span>
-            </motion.div>
+             <motion.div 
+               animate={{ top: ['0%', '100%', '0%'] }}
+               transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
+               className="absolute left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#00e5ff] to-transparent z-10 shadow-[0_0_15px_#00e5ff]"
+             />
           )}
 
-          {/* Biometrics Display */}
-          <div className="absolute bottom-6 left-6 right-6 flex justify-between items-end">
-             {isActive && (
-                <div className="flex gap-4">
-                  <motion.div 
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    className="bg-black/60 backdrop-blur-md border border-white/20 px-4 py-3 rounded-xl flex flex-col"
-                  >
-                    <span className="text-gray-400 text-xs font-bold tracking-wider mb-1">COGNITIVE LOAD</span>
-                    <span className={`text-lg font-black ${cognitiveLoad === 'High' ? 'text-[#ff1744]' : 'text-[#00e5ff]'}`}>
-                      {cognitiveLoad}
-                    </span>
-                  </motion.div>
+          {/* AR UI Elements */}
+          <div className="absolute inset-0 z-20 pointer-events-none">
+             
+             {/* Dynamic Face Frame */}
+             <AnimatePresence>
+                {isActive && (
+                   <motion.div 
+                      key="face-frame"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 border-2 border-dashed rounded-full flex items-center justify-center transition-colors duration-500"
+                      style={{ borderColor: getThemeColor() + '80' }}
+                   >
+                      <div className="w-[110%] h-[110%] border border-white/5 rounded-full animate-[spin_10s_linear_infinite]" />
+                      
+                      {/* Emotion Label */}
+                      <div 
+                         className="px-4 py-1 rounded-full text-[10px] font-black tracking-widest uppercase mb-48 shadow-lg backdrop-blur-md"
+                         style={{ backgroundColor: getThemeColor(), color: '#000' }}
+                      >
+                         {emotionState} DETECTED
+                      </div>
+                   </motion.div>
+                )}
+             </AnimatePresence>
 
-                  <motion.div 
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.1 }}
-                    className="bg-black/60 backdrop-blur-md border border-white/20 px-4 py-3 rounded-xl flex flex-col"
-                  >
-                    <span className="text-gray-400 text-xs font-bold tracking-wider mb-1">HEART RATE (EST)</span>
-                    <div className="flex items-center gap-2">
-                       <HeartIcon className={`w-5 h-5 ${cognitiveLoad === 'High' ? 'text-[#ff1744] animate-bounce' : 'text-[#ff1744]'}`} />
-                       <span className="text-lg font-black text-white">{emotionState === 'Stressed' ? '98 BPM' : emotionState === 'Calm' ? '68 BPM' : '82 BPM'}</span>
-                    </div>
-                  </motion.div>
+             {/* Corner Data Nodes */}
+             <div className="absolute top-6 left-6 flex flex-col gap-2">
+                <div className="bg-black/60 backdrop-blur-md border-l-4 border-white/20 p-3 rounded-r-xl">
+                   <p className="text-[10px] text-gray-400 font-bold uppercase">Symmetry Index</p>
+                   <p className="text-lg font-mono font-bold">{(facialData.symmetry * 100).toFixed(1)}%</p>
                 </div>
-             )}
+                <div className="bg-black/60 backdrop-blur-md border-l-4 border-white/20 p-3 rounded-r-xl">
+                   <p className="text-[10px] text-gray-400 font-bold uppercase">Coronal Tension</p>
+                   <p className="text-lg font-mono font-bold">{(facialData.tension * 100).toFixed(1)}</p>
+                </div>
+             </div>
+
+             <div className="absolute top-6 right-6 flex flex-col items-end gap-2">
+                <div className="bg-black/60 backdrop-blur-md border-r-4 border-[#ff1744] p-3 rounded-l-xl text-right">
+                   <p className="text-[10px] text-gray-400 font-bold uppercase">Real-time Pulse</p>
+                   <div className="flex items-center gap-2">
+                      <HeartIcon className={`w-4 h-4 text-[#ff1744] ${isActive ? 'animate-pulse' : ''}`} />
+                      <span className="text-lg font-mono font-bold font-black">{Math.round(heartRate)} BPM</span>
+                   </div>
+                </div>
+             </div>
+
+             {/* Bottom Biometrics Bar */}
+             <div className="absolute bottom-10 left-10 right-10 flex justify-between gap-6">
+                <div className="flex-1 bg-black/60 backdrop-blur-xl border border-white/10 p-4 rounded-2xl flex flex-col gap-2">
+                   <div className="flex justify-between items-center">
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Cognitive Load</span>
+                      <span className="text-xs font-black" style={{ color: getThemeColor() }}>{Math.round(cognitiveLoad)}%</span>
+                   </div>
+                   <div className="h-1 bg-white/10 rounded-full overflow-hidden">
+                      <motion.div 
+                         animate={{ width: `${cognitiveLoad}%` }}
+                         className="h-full"
+                         style={{ backgroundColor: getThemeColor() }}
+                      />
+                   </div>
+                </div>
+             </div>
           </div>
         </div>
 
-        {/* Sidebar Controls */}
-        <div className="flex flex-col gap-4">
+        {/* Sidebar Controls & AI Agent */}
+        <div className="flex flex-col gap-6">
           
-          {/* AI Voice Assistant Panel */}
-          <div className="bg-[#141414] border border-white/10 rounded-3xl p-6 flex flex-col gap-4 shadow-lg relative overflow-hidden">
-            <div className="absolute -right-10 -top-10 w-32 h-32 bg-[#ff1744] rounded-full blur-[60px] opacity-20 pointer-events-none"></div>
-            
-            <div className="flex items-center gap-3 relative z-10">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-r from-[#ff1744] to-[#b000ff] flex items-center justify-center shadow-[0_0_15px_rgba(255,23,68,0.5)]">
-                <SpeakerWaveIcon className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h3 className="text-white font-inter font-bold text-lg">AI Autonomous Therapist</h3>
-                <p className="text-xs text-gray-400 font-inter">Adaptive emotional feedback</p>
-              </div>
-            </div>
+          {/* AI Autonomous Therapist Card */}
+          <div className="bg-[#141414] border border-white/10 rounded-[35px] p-8 relative overflow-hidden shadow-2xl group flex-1">
+             <div className="absolute -right-20 -top-20 w-60 h-60 bg-[#b000ff] rounded-full blur-[100px] opacity-10 group-hover:opacity-20 transition-opacity"></div>
+             
+             <div className="flex items-center gap-4 mb-6 relative z-10">
+                <div className="w-14 h-14 bg-gradient-to-tr from-[#00e5ff] to-[#b000ff] rounded-2xl flex items-center justify-center p-2 shadow-[0_0_20px_rgba(0,229,255,0.3)]">
+                   <SparklesIcon className="w-8 h-8 text-white" />
+                </div>
+                <div>
+                   <h3 className="text-xl font-black tracking-tight">AI Therapist</h3>
+                   <div className="flex items-center gap-1.5 text-[#00e5ff]">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#00e5ff] animate-pulse"></div>
+                      <span className="text-[10px] font-bold uppercase tracking-widest font-mono">Autonomous Core Active</span>
+                   </div>
+                </div>
+             </div>
 
-            <div className="bg-black/50 rounded-xl p-4 min-h-[100px] border border-white/5 flex items-center relative z-10">
-              <p className="text-white font-inter font-medium text-center w-full leading-relaxed tracking-wide italic">"{aiMessage}"</p>
-            </div>
+             <div className="bg-black/40 rounded-3xl p-6 border border-white/5 min-h-[180px] flex items-center justify-center relative z-10">
+                <p className="text-gray-200 font-inter text-base italic leading-relaxed text-center leading-relaxed">
+                   "{aiMessage}"
+                </p>
+             </div>
+
+             <div className="mt-6 flex justify-center gap-4">
+                 <button className="bg-white/5 hover:bg-white/10 p-3 rounded-xl transition-colors">
+                    <SpeakerWaveIcon className="w-5 h-5 text-gray-400" />
+                 </button>
+             </div>
           </div>
 
-          {/* Emotion Indicator Panel */}
-          <motion.div 
-            animate={{ 
-              borderColor: emotionState === 'Stressed' ? '#ff1744' : emotionState === 'Joyful' ? '#00e676' : emotionState === 'Calm' ? '#00e5ff' : 'rgba(255,255,255,0.1)'
-            }}
-            className={`bg-[#141414] border-2 rounded-3xl p-6 flex flex-col gap-4 shadow-lg transition-colors duration-500`}
-          >
-            <h3 className="text-white font-inter font-bold text-lg">Emotional Resonance</h3>
-            <div className="flex items-center gap-4">
-              {emotionState === 'Stressed' ? (
-                <div className="flex items-center gap-3 text-[#ff1744]">
-                  <FaceFrownIcon className="w-8 h-8 animate-pulse" />
-                  <span className="font-bold font-inter">High Stress Detected</span>
-                </div>
-              ) : emotionState === 'Joyful' ? (
-                <div className="flex items-center gap-3 text-[#00e676]">
-                  <FaceSmileIcon className="w-8 h-8" />
-                  <span className="font-bold font-inter">Positive Engagement</span>
-                </div>
-              ) : emotionState === 'Calm' ? (
-                <div className="flex items-center gap-3 text-[#00e5ff]">
-                   <ChartBarIcon className="w-8 h-8" />
-                   <span className="font-bold font-inter">Calm & Focused</span>
-                </div>
-              ) : (
-                 <div className="flex items-center gap-3 text-gray-400">
-                  <CircularProgress size={24} color="inherit" />
-                  <span className="font-inter">Analyzing micro-expressions...</span>
-                </div>
-              )}
-            </div>
-          </motion.div>
+          {/* Action Panel */}
+          <div className="bg-[#141414] border border-white/10 rounded-[35px] p-8 shadow-2xl flex flex-col gap-4">
+             <h4 className="text-[10px] font-black text-center text-gray-500 uppercase tracking-[0.3em]">Protocol Management</h4>
+             
+             <Button 
+                variant="contained" 
+                fullWidth
+                startIcon={isActive ? <StopIcon className="w-5" /> : <PlayIcon className="w-5" />}
+                onClick={toggleSession}
+                sx={{ 
+                  bgcolor: isActive ? '#222' : '#00e5ff', 
+                  color: isActive ? '#ff1744' : '#000',
+                  '&:hover': {
+                    bgcolor: isActive ? '#333' : '#00b8d4',
+                  },
+                  py: 2.5,
+                  borderRadius: '20px',
+                  fontWeight: '900',
+                  letterSpacing: '2px',
+                  fontSize: '0.75rem',
+                  boxShadow: isActive ? 'none' : '0 10px 30px rgba(0,229,255,0.3)'
+                }}
+             >
+                {isActive ? 'HALT SESSION' : 'INITIATE TRACKING'}
+             </Button>
 
-          {/* Controls */}
-          <div className="bg-[#141414] border border-white/10 rounded-3xl p-6 shadow-lg mt-auto flex flex-col gap-4 relative overflow-hidden">
-            <h3 className="text-white font-inter font-bold text-sm uppercase tracking-widest text-center text-gray-400 mb-2">Controls</h3>
-            
-            <Button 
-              variant="contained" 
-              fullWidth
-              startIcon={isActive ? <StopIcon className="w-5" /> : <PlayIcon className="w-5" />}
-              onClick={toggleSession}
-              sx={{ 
-                bgcolor: isActive ? '#333' : '#ff1744', 
-                color: 'white',
-                '&:hover': {
-                  bgcolor: isActive ? '#222' : '#d50000',
-                },
-                py: 2,
-                borderRadius: '12px',
-                fontWeight: '900',
-                letterSpacing: '1px'
-              }}
-            >
-              {isActive ? 'End Session' : 'Start Emotion Tracking'}
-            </Button>
+             <div className="mt-2 grid grid-cols-2 gap-3">
+                <button className="bg-white/5 border border-white/10 py-3 rounded-xl text-[10px] font-bold text-gray-400 uppercase tracking-widest hover:text-white transition-colors">
+                   Calibrate
+                </button>
+                <button className="bg-white/5 border border-white/10 py-3 rounded-xl text-[10px] font-bold text-gray-400 uppercase tracking-widest hover:text-white transition-colors">
+                   Log Data
+                </button>
+             </div>
           </div>
 
         </div>

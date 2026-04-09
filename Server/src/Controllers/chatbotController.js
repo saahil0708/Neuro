@@ -9,7 +9,7 @@ export const askChatbot = async (req, res) => {
     }
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-3.1-flash-lite-preview" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const systemPrompt = "You are NeuroBot, a specialized AI assistant for the Neuro Sync rehabilitation platform. You help patients recovering from strokes or neurological conditions. Provide concise, helpful, and optimistic advice about physical and cognitive rehab. Important: Reply in the exact same language the user uses.";
 
