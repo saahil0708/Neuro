@@ -14,7 +14,7 @@ export default function ChatbotWidget() {
   const { t } = useAppContext();
   const { isAuthenticated } = useSelector(state => state.auth);
 
-  const API_URL = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/auth', '/chat') : 'http://localhost:3000/api/chat';
+  const API_URL = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/auth', '/chat') : 'https://neuro-server-au00.onrender.com/api/chat';
 
 
   const scrollToBottom = () => {

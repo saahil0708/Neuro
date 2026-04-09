@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/auth';
+const API_URL = import.meta.env.VITE_API_URL || 'https://neuro-server-au00.onrender.com/api/auth';
 
 export const loginUser = createAsyncThunk('auth/login', async (userData, thunkAPI) => {
   try {
