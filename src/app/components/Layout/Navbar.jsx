@@ -8,7 +8,7 @@ import {
   ArrowRightOnRectangleIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline';
-import { IconButton, Menu, MenuItem, Tooltip, Button, Avatar, Divider, Typography } from '@mui/material';
+import { IconButton, Menu, MenuItem, Tooltip, Button, Avatar, Divider, Typography, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from '@mui/material';
 import { useAppContext } from '../../context/AppContext';
 import { useDispatch, useSelector } from 'react-redux';
 import { toggleSidebar } from '../../features/uiSlice';
@@ -17,6 +17,7 @@ import { useNavigate, Link } from 'react-router-dom';
 
 export default function Navbar() {
   const [langAnchorEl, setLangAnchorEl] = useState(null);
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
   const { language, setLanguage, t } = useAppContext();
   
   const dispatch = useDispatch();
@@ -123,7 +124,7 @@ export default function Navbar() {
                </div>,
                <Divider key="div" sx={{ borderColor: 'rgba(255,255,255,0.1)' }} />,
                <MenuItem key="dash" onClick={() => { navigate('/dashboard'); handleProfileClose(); }} className="font-inter py-3 text-sm">My Dashboard</MenuItem>,
-               <MenuItem key="logout" onClick={() => { dispatch(logout()); handleProfileClose(); }} className="font-inter py-3 text-sm text-red-400 hover:text-red-300">
+               <MenuItem key="logout" onClick={() => { setLogoutDialogOpen(true); handleProfileClose(); }} className="font-inter py-3 text-sm text-red-400 hover:text-red-300">
                  <ArrowRightOnRectangleIcon className="w-5 h-5 mr-2" />
                  {t("logout")}
                </MenuItem>
@@ -143,6 +144,43 @@ export default function Navbar() {
           </Menu>
         </div>
       </div>
+
+      <Dialog
+        open={logoutDialogOpen}
+        onClose={() => setLogoutDialogOpen(false)}
+        PaperProps={{
+          sx: {
+            bgcolor: '#141414',
+            color: 'white',
+            border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: '16px',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
+          }
+        }}
+      >
+        <DialogTitle className="font-inter font-bold text-[#00e5ff] pb-2">Confirm Logout</DialogTitle>
+        <DialogContent>
+          <DialogContentText className="font-inter text-gray-300">
+            Are you sure you want to log out? Your session data will stop syncing.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions className="p-4 pt-2">
+          <Button onClick={() => setLogoutDialogOpen(false)} className="text-gray-400 hover:text-white font-inter font-semibold capitalize">
+            Cancel
+          </Button>
+          <Button 
+            onClick={() => { 
+                dispatch(logout()); 
+                setLogoutDialogOpen(false); 
+            }} 
+            className="bg-red-500/20 text-red-400 hover:bg-red-500/30 px-6 py-2 rounded-lg font-inter font-bold capitalize ml-3 transition-colors shadow-none hover:shadow-none"
+            variant="contained"
+            autoFocus
+          >
+            Logout
+          </Button>
+        </DialogActions>
+      </Dialog>
     </nav>
   );
 }

@@ -16,23 +16,17 @@ export default function ChatbotWidget() {
 
   const API_URL = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/auth', '/chat') : 'http://localhost:3000/api/chat';
 
-  // Prevent rendering if not logged in
-  if (!isAuthenticated) return null;
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // Scroll whenever messages change
-  // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
     if (isOpen) {
       scrollToBottom();
     }
   }, [messages, isOpen]);
 
-  // Initial greeting
-  // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
     if (messages.length === 0) {
       setMessages([
@@ -77,6 +71,8 @@ export default function ChatbotWidget() {
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') handleSend();
   };
+
+  if (!isAuthenticated) return null;
 
   return (
     <>

@@ -12,6 +12,7 @@ import GameRehab from '../pages/Game/GameRehab';
 import VideoLibrary from '../pages/VideoLibrary/VideoLibrary';
 import Login from '../pages/Auth/Login';
 import Register from '../pages/Auth/Register';
+import EmotionTherapy from '../pages/EmotionTherapy/EmotionTherapy';
 import ProtectedRoute from '../components/ProtectedRoute';
 
 const router = createBrowserRouter(
@@ -25,6 +26,7 @@ const router = createBrowserRouter(
         <Route element={<ProtectedRoute />}>
           <Route path="dashboard" element={<PatientDashboard />} />
           <Route path="therapy" element={<Therapy />} />
+          <Route path="emotion-therapy" element={<EmotionTherapy />} />
           <Route path="doctor" element={<DoctorDashboard />} />
           <Route path="tele-rehab" element={<TeleRehab />} />
           <Route path="vr" element={<VRRehab />} />

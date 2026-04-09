@@ -8,13 +8,15 @@ import {
   UserGroupIcon, 
   FilmIcon, 
   CubeTransparentIcon,
-  PuzzlePieceIcon
+  PuzzlePieceIcon,
+  FaceSmileIcon
 } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const navItems = [
   { name: 'Dashboard', path: '/', icon: <HomeIcon className="w-6 h-6" /> },
   { name: 'V-BCI Therapy', path: '/therapy', icon: <PlayCircleIcon className="w-6 h-6" /> },
+  { name: 'Emotion Therapy', path: '/emotion-therapy', icon: <FaceSmileIcon className="w-6 h-6" /> },
   { name: 'Game Rehab', path: '/game', icon: <PuzzlePieceIcon className="w-6 h-6" /> },
   { name: 'VR Mode', path: '/vr', icon: <CubeTransparentIcon className="w-6 h-6" /> },
   { name: 'Tele-Rehab', path: '/tele-rehab', icon: <VideoCameraIcon className="w-6 h-6" /> },
