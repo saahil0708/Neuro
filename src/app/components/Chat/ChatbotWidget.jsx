@@ -14,7 +14,8 @@ export default function ChatbotWidget() {
   const { t } = useAppContext();
   const { isAuthenticated } = useSelector(state => state.auth);
 
-  const API_URL = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/auth', '/chat') : 'https://neuro-server-au00.onrender.com/api/chat';
+  const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+  const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`;
 
 
   const scrollToBottom = () => {
@@ -46,23 +47,42 @@ export default function ChatbotWidget() {
     setIsLoading(true);
 
     try {
-      const res = await fetch(`${API_URL}/ask`, {
+      if (!GEMINI_API_KEY) {
+        throw new Error('API Key is missing');
+      }
+
+      const res = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        // Send history up to last 10 messages so token context isn't huge
-        body: JSON.stringify({ messages: newMessages.slice(-10) }),
+        body: JSON.stringify({
+          contents: [
+            {
+              role: 'user',
+              parts: [{ text: "System Instruction: You are NeuroBot, a professional AI rehab assistant. Provide helpful, empathetic, and scientifically-grounded advice for neuro-rehabilitation and recovery. Keep responses concise and encouraging." }]
+            },
+            ...newMessages.slice(-10).map(msg => ({
+              role: msg.role === 'assistant' ? 'model' : 'user',
+              parts: [{ text: msg.content }]
+            }))
+          ],
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 1000,
+          }
+        }),
       });
 
       const data = await res.json();
       
       if (!res.ok) {
-        throw new Error(data.error || 'Failed to fetch AI response');
+        throw new Error(data.error?.message || 'Failed to fetch AI response');
       }
 
-      setMessages(prev => [...prev, { role: 'assistant', content: data.reply }]);
+      const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "I'm sorry, I couldn't generate a response.";
+      setMessages(prev => [...prev, { role: 'assistant', content: reply }]);
     } catch (err) {
       console.error(err);
-      setMessages(prev => [...prev, { role: 'assistant', content: "Error: Could not connect to AI. Please try again later." }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: "NeuroBot is currently experiencing heavy traffic. Please try again later." }]);
     } finally {
       setIsLoading(false);
     }

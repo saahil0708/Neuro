@@ -9,6 +9,7 @@ import {
   SparklesIcon
 } from '@heroicons/react/24/solid';
 import { Button } from '@mui/material';
+import { FaceLandmarker, FilesetResolver } from "@mediapipe/tasks-vision";
 
 export default function EmotionTherapy() {
   const [isActive, setIsActive] = useState(false);
@@ -18,51 +19,130 @@ export default function EmotionTherapy() {
   const [heartRate, setHeartRate] = useState(72);
   const [aiMessage, setAiMessage] = useState("System Standby. Awaiting session initialization.");
   const [facialData, setFacialData] = useState({ tension: 0, symmetry: 0.98 });
+  const [loading, setLoading] = useState(true);
   
   const timerRef = useRef(null);
+  const webcamRef = useRef(null);
+  const faceLandmarkerRef = useRef(null);
+  const lastVideoTimeRef = useRef(-1);
+  const requestRef = useRef();
 
-  // Simulated AI Logic for Emotion Changes
+  // Initialize MediaPipe
+  useEffect(() => {
+    const initFaceLandmarker = async () => {
+      try {
+        const vision = await FilesetResolver.forVisionTasks(
+          "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.34/wasm"
+        );
+        faceLandmarkerRef.current = await FaceLandmarker.createFromOptions(vision, {
+          baseOptions: {
+            modelAssetPath: `https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task`,
+            delegate: "GPU"
+          },
+          runningMode: "VIDEO",
+          outputFaceBlendshapes: true,
+          numFaces: 1
+        });
+        setLoading(false);
+        console.log("FaceLandmarker initialized");
+      } catch (error) {
+        console.error("Failed to initialize FaceLandmarker:", error);
+      }
+    };
+    initFaceLandmarker();
+    return () => {
+      if (requestRef.current) cancelAnimationFrame(requestRef.current);
+    };
+  }, []);
+
+  // Detection and Analysis Loop
+  const predictWebcam = () => {
+    if (
+      webcamRef.current &&
+      webcamRef.current.video &&
+      webcamRef.current.video.readyState === 4 &&
+      faceLandmarkerRef.current
+    ) {
+      const startTimeMs = performance.now();
+      if (lastVideoTimeRef.current !== webcamRef.current.video.currentTime) {
+        lastVideoTimeRef.current = webcamRef.current.video.currentTime;
+        const results = faceLandmarkerRef.current.detectForVideo(
+          webcamRef.current.video,
+          startTimeMs
+        );
+
+        if (results.faceLandmarks && results.faceLandmarks.length > 0) {
+          const landmarks = results.faceLandmarks[0];
+          const blendshapes = results.faceBlendshapes[0]?.categories || [];
+
+          // 1. Calculate Tension (Brow Furrow)
+          // browDownLeft (index 3) and browDownRight (index 4) blendshapes
+          const browTension = (blendshapes.find(b => b.categoryName === 'browDownLeft')?.score || 0) + 
+                             (blendshapes.find(b => b.categoryName === 'browDownRight')?.score || 0);
+          
+          // 2. Calculate Symmetry
+          // Compare distance of left eye (33) and right eye (263) from nose bridge (1)
+          const nose = landmarks[1];
+          const leftEye = landmarks[33];
+          const rightEye = landmarks[263];
+          const distL = Math.abs(nose.x - leftEye.x);
+          const distR = Math.abs(nose.x - rightEye.x);
+          const symmetry = 1 - Math.abs(distL - distR) * 5;
+
+          // 3. Determine Emotion State
+          const mouthSmile = (blendshapes.find(b => b.categoryName === 'mouthSmileLeft')?.score || 0) + 
+                             (blendshapes.find(b => b.categoryName === 'mouthSmileRight')?.score || 0);
+          const eyeWide = (blendshapes.find(b => b.categoryName === 'eyeWideLeft')?.score || 0) + 
+                          (blendshapes.find(b => b.categoryName === 'eyeWideRight')?.score || 0);
+
+          let newState = 'Neutral';
+          let msg = aiMessage;
+
+          if (browTension > 0.6) {
+             newState = 'Stressed';
+             msg = "Elevated tension detected in brow region. Please take a deep breath.";
+          } else if (mouthSmile > 0.4) {
+             newState = 'Calm';
+             msg = "Positive emotional response detected. Neural state is stabilizing.";
+          } else if (eyeWide > 0.2) {
+             newState = 'Focus';
+             msg = "High cognitive engagement detected. Proceeding with protocol.";
+          } else {
+             newState = 'Neutral';
+          }
+
+          if (newState !== emotionState) {
+            setEmotionState(newState);
+            setAiMessage(msg);
+            // Throttle speaking to avoid overlapping
+            if (Math.random() > 0.95) speak(msg);
+          }
+
+          setFacialData({ tension: browTension, symmetry: Math.max(0, symmetry) });
+          setHeartRate(prev => Math.max(60, Math.min(100, prev + (Math.random() - 0.5) * 2))); // Pulse derivation
+          setCognitiveLoad(Math.round(browTension * 50 + 20));
+        }
+      }
+    }
+    if (isActive) {
+      requestRef.current = requestAnimationFrame(predictWebcam);
+    }
+  };
+
   useEffect(() => {
     if (isActive) {
       timerRef.current = setInterval(() => {
         setTimer((prev) => prev + 1);
-        
-        // Randomly simulate slight biometric fluctuations
-        setHeartRate(prev => Math.max(60, Math.min(100, prev + (Math.random() - 0.5) * 4)));
-        setCognitiveLoad(prev => Math.max(10, Math.min(90, prev + (Math.random() - 0.5) * 5)));
-        setFacialData(prev => ({ 
-           tension: Math.max(0, Math.min(1, prev.tension + (Math.random() - 0.5) * 0.1)),
-           symmetry: 0.95 + Math.random() * 0.05
-        }));
       }, 1000);
-
-      // Programmed Event Timeline for Demo
-      const timeline = [
-        { time: 5, state: 'Calm', msg: "Facial tension decreasing. Neural activity stabilizing. Excellent start." },
-        { time: 15, state: 'Stressed', msg: "Elevated micro-expression tension detected. Cognitive load rising. please pause and focus on your breath." },
-        { time: 25, state: 'Focus', msg: "Recovery complete. Your alpha-wave state is optimal. Let's proceed with the cognitive assessment." },
-        { time: 40, state: 'Calm', msg: "Session performance is above baseline. Emotional resonance is positive." }
-      ];
-
-      const timeouts = timeline.map(event => {
-        return setTimeout(() => {
-           if (isActive) {
-              setEmotionState(event.state);
-              setAiMessage(event.msg);
-              speak(event.msg);
-           }
-        }, event.time * 1000);
-      });
-
-      return () => {
-        clearInterval(timerRef.current);
-        timeouts.forEach(t => clearTimeout(t));
-      };
+      requestRef.current = requestAnimationFrame(predictWebcam);
     } else {
       clearInterval(timerRef.current);
-      setEmotionState('Neutral');
-      setAiMessage("Session complete. Sensors deactivated.");
+      if (requestRef.current) cancelAnimationFrame(requestRef.current);
     }
+    return () => {
+      clearInterval(timerRef.current);
+      if (requestRef.current) cancelAnimationFrame(requestRef.current);
+    };
   }, [isActive]);
 
   const speak = (text) => {
@@ -122,10 +202,18 @@ export default function EmotionTherapy() {
         {/* Main Interface: Camera + Live Overlays */}
         <div className="lg:col-span-2 relative rounded-[40px] overflow-hidden border border-white/20 bg-black shadow-2xl min-h-[500px]">
           <Webcam 
+            ref={webcamRef}
             audio={false}
             className="w-full h-full object-cover opacity-60 grayscale hover:grayscale-0 transition-all duration-1000"
             mirrored={true}
           />
+
+          {loading && (
+             <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center gap-4 z-50">
+                <div className="w-12 h-12 border-4 border-[#00e5ff] border-t-transparent rounded-full animate-spin"></div>
+                <p className="text-[#00e5ff] font-mono tracking-widest text-sm">LOADING NEURAL MODELS...</p>
+             </div>
+          )}
           
           {/* Scanning Effect */}
           {isActive && (
@@ -177,7 +265,7 @@ export default function EmotionTherapy() {
 
              <div className="absolute top-6 right-6 flex flex-col items-end gap-2">
                 <div className="bg-black/60 backdrop-blur-md border-r-4 border-[#ff1744] p-3 rounded-l-xl text-right">
-                   <p className="text-[10px] text-gray-400 font-bold uppercase">Real-time Pulse</p>
+                   <p className="text-[10px] text-gray-400 font-bold uppercase">Estimated Pulse</p>
                    <div className="flex items-center gap-2">
                       <HeartIcon className={`w-4 h-4 text-[#ff1744] ${isActive ? 'animate-pulse' : ''}`} />
                       <span className="text-lg font-mono font-bold font-black">{Math.round(heartRate)} BPM</span>
@@ -244,6 +332,7 @@ export default function EmotionTherapy() {
              <Button 
                 variant="contained" 
                 fullWidth
+                disabled={loading}
                 startIcon={isActive ? <StopIcon className="w-5" /> : <PlayIcon className="w-5" />}
                 onClick={toggleSession}
                 sx={{ 
@@ -261,7 +350,7 @@ export default function EmotionTherapy() {
                 }}
              >
                 {isActive ? 'HALT SESSION' : 'INITIATE TRACKING'}
-             </Button>
+            </Button>
 
              <div className="mt-2 grid grid-cols-2 gap-3">
                 <button className="bg-white/5 border border-white/10 py-3 rounded-xl text-[10px] font-bold text-gray-400 uppercase tracking-widest hover:text-white transition-colors">
@@ -278,3 +367,4 @@ export default function EmotionTherapy() {
     </div>
   );
 }
+
